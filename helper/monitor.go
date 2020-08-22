@@ -32,10 +32,11 @@ func PeriodicCheck(id uint64) {
 
 		if string(resp.Status) == "200 OK" {
 			d.Status = "active"
+			d.Failurecount = 0
 		}
 		db.PeriodicUpdata(d)
 		time.Sleep(time.Second * time.Duration(d.Frequency))
-		PeriodicCheck(d.ID)
+		return PeriodicCheck(d.ID)
 	}
 	return
 }

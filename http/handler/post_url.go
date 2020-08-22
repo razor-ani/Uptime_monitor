@@ -29,10 +29,9 @@ func PostUrls(c *gin.Context) {
 
 	data.ID = db.InsertURL(&data)
 
-	c.JSON(200, helper.CreateResponse(&data))
-
 	varLock.Lock()
 	UIDinfo[data.UUID] = INFO{data.Status, data.ID, data.Activate}
 	varLock.Unlock()
 	go helper.PeriodicCheck(data.ID)
+	c.JSON(200, helper.CreateResponse(&data))
 }

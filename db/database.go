@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	//mysql ...
@@ -52,8 +53,8 @@ func InsertURL(b *EntryData) uint64 {
 		log.Fatal(err)
 	}
 	res, err := stmt.Exec(b.UUID, b.URL, b.Frequency, b.Crawltimeout, b.Failurethreshold, b.Status, b.Failurecount, b.Activate)
-	d.Close()
-	dbLock.Unlock()
+	defer d.Close()
+	defer dbLock.Unlock()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,9 +74,9 @@ func FetchURLInfo(id uint64) string {
 	dbLock.Lock()
 	d := Getdb()
 
-	resp, err := d.Query("SELECT status FROM url_data WHERE id=" + string(id))
-	d.Close()
-	dbLock.Unlock()
+	resp, err := d.Query("SELECT status FROM url_data WHERE id=" + strconv.Itoa(int(id)))
+	defer d.Close()
+	defer dbLock.Unlock()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +94,7 @@ func UpdateEntry(b *EntryData) {
 	dbLock.Lock()
 	d := Getdb()
 
-	stmt, err := d.Prepare("UPDATE url_data SET frequency = ? , failure_threshold = ?, crawl_timeout = ? WHERE id = ?")
+	stmt, err := d.Prepare("UPDATE url_data SET frequency = ? , failure_threshold = ?, crawl_timeout = ? WHERE id=?")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,10 +104,10 @@ func UpdateEntry(b *EntryData) {
 	}
 	fmt.Printf("Patch Successful!")
 
-	resp, err := d.Query("SELECT url, activate FROM url_data WHERE id=" + string(b.ID))
+	resp, err := d.Query("SELECT url, activate FROM url_data WHERE id=" + strconv.Itoa(int(b.ID)))
 
-	d.Close()
-	dbLock.Unlock()
+	defer d.Close()
+	defer dbLock.Unlock()
 
 	if err != nil {
 		log.Fatal(err)
@@ -124,9 +125,9 @@ func FetchAllData(id uint64) *EntryData {
 	d := Getdb()
 	data := EntryData{}
 
-	resp, err := d.Query("SELECT id, uuid, url, crawl_timeout, frequency, failure_threshold, status, failure_count, activate FROM url_data WHERE id=" + string(id))
-	d.Close()
-	dbLock.Unlock()
+	resp, err := d.Query("SELECT id, uuid, url, crawl_timeout, frequency, failure_threshold, status, failure_count, activate FROM url_data WHERE id=" + strconv.Itoa(int(id)))
+	defer d.Close()
+	defer dbLock.Unlock()
 
 	if err != nil {
 		log.Fatal(err)
@@ -150,8 +151,8 @@ func PeriodicUpdata(b *EntryData) {
 		log.Fatal(err)
 	}
 	_, err = stmt.Exec(b.Failurecount, b.Status, b.ID)
-	d.Close()
-	dbLock.Unlock()
+	defer d.Close()
+	defer dbLock.Unlock()
 
 	if err != nil {
 		log.Fatal(err)
@@ -171,8 +172,8 @@ func UpdateActivation(id uint64, a bool) {
 	}
 	_, err = stmt.Exec(a, id)
 
-	d.Close()
-	dbLock.Unlock()
+	defer d.Close()
+	defer dbLock.Unlock()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -185,12 +186,10 @@ func DeleteWithID(id string) {
 	d := Getdb()
 
 	_, err := d.Query("DELETE FROM url_data  WHERE id =" + id)
-	d.Close()
-	dbLock.Unlock()
+	defer d.Close()
+	defer dbLock.Unlock()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
-

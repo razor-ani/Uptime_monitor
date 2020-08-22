@@ -15,7 +15,7 @@ func ActivateUrls(c *gin.Context) {
 
 	if UIDinfo[id].ACTIVATION {
 		c.JSON(200, gin.H{
-			"Error": "Already inactive",
+			"Error": "Already active",
 		})
 		return
 	}
