@@ -9,6 +9,7 @@ import (
 
 //Check ..
 func Check(url string) bool {
+
 	resp, error := http.Get("http://" + url)
 	if error != nil {
 		fmt.Printf("External server errror: %v \n", error)
@@ -18,11 +19,14 @@ func Check(url string) bool {
 }
 
 //PeriodicCheck ...
-func PeriodicCheck(id uint64) {
-	d := db.FetchAllData(id)
+func PeriodicCheck(id uint64) error {
+	d, e := db.FetchAllData(id)
+	if e != nil {
+		return fmt.Errorf("Bad Gateway: %v", e)
+	}
 	if d.Activate {
-		resp, error := http.Get("http://" + d.URL)
-		if error != nil {
+		resp, err := http.Get("http://" + d.URL)
+		if err != nil {
 			d.Failurecount = d.Failurecount + 1
 			if d.Failurecount == d.Failurethreshold {
 				d.Status = "inactive"
@@ -34,9 +38,12 @@ func PeriodicCheck(id uint64) {
 			d.Status = "active"
 			d.Failurecount = 0
 		}
-		db.PeriodicUpdata(d)
+		err = db.PeriodicUpdata(d)
+		if err != nil {
+			return fmt.Errorf("Bad Gateway: %v", err)
+		}
 		time.Sleep(time.Second * time.Duration(d.Frequency))
 		return PeriodicCheck(d.ID)
 	}
-	return
+	return nil
 }

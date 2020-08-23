@@ -3,6 +3,8 @@ package handler
 import (
 	"Uptime-monitor/db"
 	"Uptime-monitor/helper"
+	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +12,7 @@ import (
 
 //ActivateUrls ..
 func ActivateUrls(c *gin.Context) {
+	log.Printf("Accessing request params...")
 	id := c.Param("id")
 	ID, _ := strconv.Atoi(id)
 
@@ -19,6 +22,11 @@ func ActivateUrls(c *gin.Context) {
 		})
 		return
 	}
-	db.UpdateActivation(uint64(ID), true)
+	err := db.UpdateActivation(uint64(ID), true)
+	if err != nil {
+		c.JSON(500, gin.H{"code": "500", "message": fmt.Sprintf("%v", err)})
+		return
+	}
 	go helper.PeriodicCheck(uint64(ID))
+
 }
